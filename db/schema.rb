@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20081026225841) do
+ActiveRecord::Schema.define(:version => 20081029211222) do
 
   create_table "conversations", :force => true do |t|
     t.string   "name"
@@ -19,8 +19,8 @@ ActiveRecord::Schema.define(:version => 20081026225841) do
     t.boolean  "personal_conversation", :default => false
   end
 
-  add_index "conversations", ["name"], :name => "index_conversations_on_name"
   add_index "conversations", ["created_at"], :name => "index_conversations_on_created_at"
+  add_index "conversations", ["name"], :name => "index_conversations_on_name"
 
   create_table "messages", :force => true do |t|
     t.integer  "user_id"
@@ -34,9 +34,9 @@ ActiveRecord::Schema.define(:version => 20081026225841) do
     t.integer  "attachment_file_size"
   end
 
-  add_index "messages", ["user_id"], :name => "index_messages_on_user_id"
-  add_index "messages", ["conversation_id"], :name => "index_messages_on_conversation_id"
   add_index "messages", ["created_at"], :name => "index_messages_on_created_at"
+  add_index "messages", ["conversation_id"], :name => "index_messages_on_conversation_id"
+  add_index "messages", ["user_id"], :name => "index_messages_on_user_id"
 
   create_table "sessions", :force => true do |t|
     t.string   "session_id", :null => false
@@ -45,8 +45,8 @@ ActiveRecord::Schema.define(:version => 20081026225841) do
     t.datetime "updated_at"
   end
 
-  add_index "sessions", ["session_id"], :name => "index_sessions_on_session_id"
   add_index "sessions", ["updated_at"], :name => "index_sessions_on_updated_at"
+  add_index "sessions", ["session_id"], :name => "index_sessions_on_session_id"
 
   create_table "users", :force => true do |t|
     t.string   "login",                     :limit => 40
@@ -65,7 +65,7 @@ ActiveRecord::Schema.define(:version => 20081026225841) do
   end
 
   add_index "users", ["login"], :name => "index_users_on_login", :unique => true
-  add_index "users", ["email"], :name => "index_users_on_email"
   add_index "users", ["crypted_password"], :name => "index_users_on_crypted_password"
+  add_index "users", ["email"], :name => "index_users_on_email"
 
 end
