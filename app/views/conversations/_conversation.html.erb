@@ -1,0 +1,18 @@
+<li class="conversation">
+	<h3><%= link_to h(conversation.name), conversation_messages_path(conversation) %></h3>
+	
+	<% if conversation.tag_counts and conversation.tag_counts.size > 0 %>
+		<% tag_cloud conversation.tag_counts, %w(nube1 nube2 nube3 nube4 nube5 nube6) do |tag, css_class| %>
+			<span class="<%= css_class %> tag"><%= link_to tag, conversations_path(:tag => tag.to_s) %></span>
+		<% end %>
+	<% end %>
+	<div class="clear"></div>
+	
+	<div class="description"><%= conversation.escaped_description %></div>
+	<span class="quiet small">
+	  <%= conversation.created_at.to_s(:date_time12) %> -
+	  <%= pluralize conversation.messages.size, 'message' %> -
+	  <%= pluralize conversation.subscriptions.size, 'follower' %> -
+	  <%= render :partial => 'conversations/follow_from_list', :object => conversation %>
+	</span>
+</li>

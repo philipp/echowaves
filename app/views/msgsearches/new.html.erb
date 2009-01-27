@@ -1,0 +1,19 @@
+<%= flash_messages %>
+<div class="page">
+	<div class="balloon">
+		<h1><%= t("ui.search_messages") %></h1>
+		<div>
+			<% form_tag msgsearch_path, :method => :get do %>
+			<%= text_field_tag :q %>
+			<%= submit_tag t("ui.search"), :name => nil  %>
+			<% end %>
+		</div>
+	</div>
+
+	<div class="item center">
+		<br/>
+		<%= image_tag("/images/icons/redarrowup.png") %>
+		<h3><%= t("ui.search_advice") %></h3>
+	</div>
+</div>
+

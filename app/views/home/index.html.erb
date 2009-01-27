@@ -1,14 +1,29 @@
+<div id="main_headline">
+  <h1><%= t("home.index.headline1") %></h1>
+</div>
 
-<p>
-<font size=+1>Echowaves.com is an opensource web based group chat software written in RubyOnRails. The source code is hosted at <a href="http://github.com/dmitryame/echowaves">http://github.com/dmitryame/echowaves</a>. 
-</font>
-</p>
+<div id="signup_headline">
+  <h2><%= link_to t("ui.signup"), new_user_path, :class => "button" -%> <%= t("home.index.p2") %></h2>
+</div>
 
-<p>
-	EchoWaves is a YACT -- Yet Another Collaboration Tool. It's actually beginning to take a shape of a YASN -- Yet Another Social Network. So, what's so special about our YASN, well, it's built around conversations rather then users -- we think it's more natural for humans to socialize around conversations. If you have any other ideas or suggestions -- feel free to talk about it in <%= link_to 'EcHoWaVeS.CoM', conversation_path(1), :action => "index" -%> conversation.
-	
-	
-<p>
-<%= link_to 'SignUp', :controller => "users", :action => "new" -%> -- it's free and anyone can join. On this site you will be able to start your own conversations, where everyone will be able to talk to you and to each other. You also will be able to see what other people are chatting about and participate in their conversations. Have fun!
-</p>
-	
+<div id="main_description">
+ <%= t("home.index.p1") %> <%= link_to t("ui.echowaves_conversation"), conversation_path(1), :action => "index" -%>.
+</div>
+
+<div id="home_stats">
+	<h2><%= t("ui.total_convos")-%>: <%=@total_convos-%> - <%= t("ui.total_messages")-%>: <%=@total_messages-%> - <%= t("ui.total_users")-%>: <%=@total_users-%></h2>
+</div>
+
+<%= render :partial => 'recent_convos'%>	
+
+<%= render :partial => 'popular_convos'%>	
+
+<%= render :partial => 'recently_joined'%>	
+
+
+<div class="clear"></div>
+<div class="item center">
+  <h2><%= t("home.index.headline2") %></h2>
+</div>
+
+<div class="item center"><h3><%= t("home.index.feedback_advice") %></h3></div>

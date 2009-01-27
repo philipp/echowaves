@@ -1,32 +1,21 @@
 require 'stomp'
 
 class MessagesController < ApplicationController
-  before_filter :login_required
-  before_filter :find_conversation, :except => :send_data
-    
-  def get_more_messages
-    @messages = get_messages_before params[:before]  
-    render :partial => 'message', :collection => @messages
-  end
   
-  def get_messages_before(first_message_id)
-    @conversation.messages.find(:all, :include => [:user], :conditions => ["id < ?", first_message_id], :limit => 100, :order => 'id DESC').reverse
-  end
+  public :render_to_string # this is needed to make render_to_string public for message model to be able to use it
+  
+  before_filter :login_required, :except => [:index, :show, :get_more_messages ]
+  before_filter :find_conversation, :except => [ :send_data, :auto_complete_for_tag_name]
+  before_filter :check_write_access, :only => [ :create ]
+  after_filter :store_location, :only => [:index]  
 
-
-  def get_messages_after(cutoff_message_id)
-    @conversation.messages.find(:all, :include => [:user], :conditions => ["id > ?", cutoff_message_id], :order => 'id ASC')
-  end
+  auto_complete_for :tag, :name
   
-  def message_poll  
-    @messages = get_messages_after params[:after]  
-    render :partial => 'message', :collection => @messages
-  end
-  
-  # GET /messages
-  # GET /messages.xml
   def index
-    @messages = @conversation.messages.find(:all, :include => [:user], :limit => 100, :order => 'id DESC').reverse
+    @messages = @conversation.messages.published.find(:all, :include => [:user], :limit => 100, :order => 'id DESC').reverse
+    current_user.conversation_visit_update(@conversation) if logged_in?
+    
+    @has_more_messages = @conversation.has_messages_before?(@messages.first)
 
     respond_to do |format|
       format.html # index.html.erb
@@ -34,107 +23,134 @@ class MessagesController < ApplicationController
     end
   end
 
-  # # GET /messages/1
-  # # GET /messages/1.xml
-  # def show
-  #   @message = Message.find(params[:id])
-  # 
-  #   respond_to do |format|
-  #     format.html # show.html.erb
-  #     format.xml  { render :xml => @message }
-  #   end
-  # end
+  #TODO: get_more_messages, get_more_messages_on_top, get_more_messages_on_bottom need to be refactored into something more generic
+  def get_more_messages
+    @messages = @conversation.get_messages_before(params[:before]).reverse
+    @has_more_messages = @conversation.has_messages_before?(@messages.first)
+  end
 
-  # GET /messages/new
-  # GET /messages/new.xml
-  def new
-    @message = Message.new
+  def get_more_messages_on_top
+    @messages = @conversation.get_messages_before(params[:before]).reverse
+    @has_more_messages_on_top = @conversation.has_messages_before?(@messages.first)
+  end
 
+  def get_more_messages_on_bottom
+    @messages = @conversation.get_messages_after(params[:after]).reverse
+    @has_more_messages_on_bottom = @conversation.has_messages_after?(@messages.last)
+  end
+
+  def show
+    @message = Message.published.find(params[:id])
+    @messages = Array[@message] 
+    
+    @has_more_messages_on_top    = @conversation.has_messages_before?(@message)
+    @has_more_messages_on_bottom = @conversation.has_messages_after?(@message)
+    
     respond_to do |format|
-      format.html # new.html.erb
+      format.html { render :layout => "single_message" }
       format.xml  { render :xml => @message }
     end
   end
 
-  # # GET /messages/1/edit
-  # def edit
-  #   @message = Message.find(params[:id])
-  # end
-
-  # POST /messages
-  # POST /messages.xml
   def create
-    @message = Message.new(params[:message])    
-    @message.user = current_user
-    @message.conversation = @conversation
+    @message = @conversation.messages.new(params[:message])
     
     respond_to do |format|
-      if @message.save
-        # flash[:notice] = 'Message was successfully created.'
-        
-        format.html { 
-          if request.xhr?
-            @messages = get_messages_after params[:after]
-            # send a stomp message for everyone else to pick it up
-            send_stomp_message @messages
-            render :nothing => true
-          else
-            redirect_to(conversation_messages_path(@conversation))
-          end
+      if current_user.messages << @message
+        format.html { redirect_to(conversation_messages_path(@conversation)) }
+        format.xml { render :xml => @message, :status => :created, :location => @message }
+        format.js {
+          # send a stomp message for everyone else to pick it up
+          @message.send_stomp_message(self)
+          render :nothing => true
         }
-        format.xml  { render :xml => @message, :status => :created, :location => @message }
       else
-        format.html { render :action => "new" }
-        format.xml  { render :xml => @message.errors, :status => :unprocessable_entity }
+        format.html { render :nothing => true }
+        format.xml { render :xml => @message.errors, :status => :unprocessable_entity }
+        format.js { render :nothing => true }
       end
     end
   end
 
-  # # PUT /messages/1
-  # # PUT /messages/1.xml
-  # def update
+  def upload_attachment
+    render( :nothing => true ) and return if params[:message][:attachment].blank?
+
+    @message = current_user.messages.new(params[:message])
+    @message.message = @message.attachment_file_name if @message.message.blank?
+
+    if @conversation.messages << @message
+      # send a stomp message for everyone else to pick it up
+      @message.send_stomp_message(self)
+    end
+    # FIXME: this not work yet, because we are calling this action from an iframe,
+    # and the RJS can't access the document.
+    # We need something like respond_to_parent plugin, but this plugin don't work with safari 3
+    # right now.
+    # This will be useful for fix issue #1, and for reset the forms AFTER upload an
+    # attachment
+    #
+    # render :action => 'upload_attachment.js.rjs'
+    
+    render :nothing => true
+  end
+
+  def report
+    message = @conversation.messages.find(params[:id])
+    message.report_abuse(current_user)
+    render :nothing => true
+  end
+
+  # def spawn_conversation
   #   @message = Message.find(params[:id])
   # 
-  #   respond_to do |format|
-  #     if @message.update_attributes(params[:message])
-  #       flash[:notice] = 'Message was successfully updated.'
-  #       format.html { redirect_to(@message) }
-  #       format.xml  { head :ok }
-  #     else
-  #       format.html { render :action => "edit" }
-  #       format.xml  { render :xml => @message.errors, :status => :unprocessable_entity }
-  #     end
+  #   if current_user.conversations.find_by_parent_message_id( @message.id )
+  #     flash[:error] = "You already spawned a new conversation from this message."
+  #     redirect_to conversation_messages_path(@conversation)
+  #     return
   #   end
+  #   
+  #   spawned_conversation = @message.spawn_new_conversation( current_user )
+  #   
+  #   # create a message in the original conversation notifying about this spawning
+  #   # and send realtime notification to everyone who's listening
+  #   notification_message = @conversation.notify_of_new_spawn( current_user, spawned_conversation, @message )
+  #   notification_message.send_stomp_message(self) unless notification_message == nil
+  #       
+  #   redirect_to conversation_messages_path(spawned_conversation)
   # end
-
-  # # DELETE /messages/1
-  # # DELETE /messages/1.xml
-  # def destroy
-  #   @message = Message.find(params[:id])
-  #   @message.destroy
-  # 
-  #   respond_to do |format|
-  #     format.html { redirect_to(messages_url) }
-  #     format.xml  { head :ok }
-  #   end
-  # end
-
+  
   private
 
-    def find_conversation
-      @conversation_id = params[:conversation_id]
-      @conversation = Conversation.find(@conversation_id)
+  def find_conversation
+    @conversation = Conversation.published.find( params[:conversation_id] )
+  end
+  
+  def check_write_access
+    unless @conversation.writable_by?(current_user)
+      flash[:error] = t("conversations.not_allowed_to_write_warning")
+      redirect_to conversation_messages_path(@conversation)
+      return
     end
-    
-    
-    def send_stomp_message(messages)
-      newmessagescript = render_to_string :partial => 'message', :collection => messages
-      s = Stomp::Client.new
-      s.send("CONVERSATION_CHANNEL_" + params[:conversation_id], "<!--message-->" + newmessagescript)
-      s.close
-    rescue SystemCallError
-      logger.error "IO failed: " + $!
-      # raise
-    end
-
+  end
+  
+  # def send_stomp_message(message)
+  #   newmessagescript = render_to_string :partial => 'message', :object => message
+  #   s = Stomp::Client.new
+  #   s.send("CONVERSATION_CHANNEL_" + params[:conversation_id], newmessagescript)
+  #   s.close
+  # rescue SystemCallError
+  #   logger.error "IO failed: " + $!
+  #   # raise
+  # end
+  
+  # def send_stomp_notifications
+  #   s = Stomp::Client.new
+  #   s.send("CONVERSATION_NOTIFY_CHANNEL_" + params[:conversation_id], "1")
+  #   # puts ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONVERSATION_NOTIFY_CHANNEL_" + params[:conversation_id])
+  #   s.close
+  # rescue SystemCallError
+  #   logger.error "IO failed: " + $!
+  #   # raise
+  # end
+  
 end

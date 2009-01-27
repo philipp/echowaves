@@ -1,0 +1,151 @@
+es-ES:
+  home:
+    index:
+      headline1: "Echowaves.com es un programa de chat y red social"
+      headline2: 'El código fuente se encuentra en <a href="http://github.com/dmitryame/echowaves">http://github.com/dmitryame/echowaves</a>.'
+      p1: '<h5>Si te gusta charlar, o escribir un blog, o compartir tu estado con los amigos, o simplemente socializar, EchoWaves es para ti.</h5>EchoWaves es una <span class="highlight">herramienta de colaboracion</span> y una <span class="highlight">red social</span>. Tiene muchas caracteristicas interesantes como <span class="highlight">Facebook</span> y es tan facil de usar que <span class="highlight">Twitter</span>. Todo gira alrededor de las conversaciones (convos) en vez de los usuarios. ¿No es mas natural para las personas, el socializar alrededor de las conversaciones?. Si tienes alguna idea o sugerencia no dudes en hablarnos de ello en la'
+      p2: "-- es gratis y cualquiera puede unirse. Comienza tus propias conversaciones, invita a todos tus amigos a unirse, sigue de cerca otras conversaciones que te parezcan interesantes y diviertete!"
+      feedback_advice: 'Si encuentras algun problema o quieres hacer alguna sugerencia sobre alguna funcionalidad que te gustaria ver en echowaves, puedes hacerlo en <a href="http://code.google.com/p/echowaves/issues/list">http://echowaves.googlecode.com/</a>'
+  ui:
+    cancel: "cancelar"
+    name: "nombre"
+    description: "descripcion"
+    create: "crear"
+    signup: "Registrate"
+    login: "entrar"
+    login_name: "nombre de usuario"
+    email: "email"
+    email_confirmation: "confirm email"    
+    logout: "salir"
+    echowaves_conversation: "conversacion de EcHoWaVeS.CoM"
+    home: "inicio"
+    users: "usuarios"
+    convos: "convos"
+    edit_profile: "editar perfil"
+    update_your_profile: "Actualiza tu perfil"
+    get_an_gravatar_here: "consigue un gravatar aqui"
+    conversations: "conversaciones"
+    back: "atras"
+    more_messages: "mas mensajes"
+    password: "contraseña"
+    password_confirmation: "confirmar contraseña"
+    forgot_password: "¿Has olvidado la contraseña?"
+    its_free: "es gratis y todo el mundo puede unirse"
+    users_conversations: "Conversaciones de los usuarios"
+    follow: "seguir"
+    unfollow: "no seguir"
+    report: "informar"
+    reportconfirm: "Estas seguro de querer informar acerca de este mensaje? El autor del mensaje inapropiado sera castigado."    
+    reportconfirm_conversation: "Estas seguro de querer informar acerca de esta conversation? El autor de la conversacion inapropiada sera castigado."    
+    spawn: "bifurcar"
+    spawnconfirm: "Estas seguro de querer comenzar una nueva conversacion a partir de este mensaje?"
+    invite: "invite"
+    tagged_with: "etiquetado con"
+    tags: "etiquetas"    
+    add_tag: "añadir tag"
+    view_all: "view all"
+    view_all_users: "view all users"
+    view_all_convos: "view all convos"
+    view_all_or_add_a_tag: "<a href=\"#tags\">ver todos</a> o <a href=\"#tags\">añade un tag</a>"
+    confirm_remove_tag: "¿Estas seguro de que quieres quitar esta etiqueta?"
+    back_to_parent: "convo original"
+    this_is_the_newest_message: "Este es el mensaje mas nuevo"
+    attach: "Adjuntar"
+    attach_file: "adjuntar archivo"
+    send: "enviar"
+    shift_enter: "(mayusculas+Intro para insertar una nueva linea)"
+    my_conversations: "Mis conversaciones"
+    news: "Nuevos mensajes"
+    recently_visited: "Visitado recientemente"
+    time_zone: "zona horaria"
+    update: "actualizar"
+    recent_followers: "Seguidores recientes"
+    recent_tags: "Recent tags"
+    followers: "Seguidores"
+    following: "Following"
+    search_messages: "buscar mensajes"
+    search_conversations: "buscar convos"
+    search: "buscar"
+    search_advice: "escribe lo que quieras buscar y haz click en buscar!"
+    make_read_only: "hacer de solo lectura"
+    make_writable: "permitir escritura"
+    read_only: "solo lectura"
+    connected: "conectado"
+    transport_opened: "conexion abierta"
+    transport_closed: "conexion cerrada"
+    code: "codigo"
+    click_to_activate: "Click aqui para activar tu cuenta"
+    thanks_for_signup: "Gracias por registrarte! Te hemos enviando un correo electrónico con tu código de activación"
+    signup_error: "Lo sentimos mucho, no hemos podido crear tu cuenta. Por favor, inténtalo de nuevo o ponte en contacto con un administrador (el enlace está más arriba)."
+    started_by: "comenzada por"
+    recently_joined: "Unidos recientemente"
+    recent_convos: "Conversaciones recientes"    
+    popular_convos: "Conversaciones populares"
+    total_convos: "Convos"
+    total_messages: "Mensajes"
+    total_users: "Usuarios"
+  users:
+    recently_joined_users: "usuarios registrados recientemente"
+    sign_up_as_new_user: "registrate como usuario"
+    look_for_users: "buscar usuarios"
+    since: "desde:"
+    logged_in_sucesfully: "Conectado con exito"
+    logged_out: "Se ha cerrado la sesion."
+    could_not_login_as: "No se ha podido iniciar la sesion para {{login}}"
+    profile_updated: "Perfil actualizado correctamente"
+    signup_complete: "Registro completado! Inicia sesión para continuar."
+  conversations:
+    this_is_an_read_only_convo: "Esta es una conversacion de solo lectura"
+    login_or_register_to_participate: "Por favor <a href=\"/login\">entra</a> para participar.<br/>¿Aun no tienes una cuenta? <a href=\"/signup\">registrate ahora</a>, es gratis"
+    recently_started_conversations: "conversaciones iniciadas recientemente"
+    start_new_conversation: "iniciar una nueva conversacion"
+    look_for_conversations: "buscar conversaciones"
+    new_conversation: "nueva conversacion"
+    convo_sucesfully_created: "La conversacion ha sido creada correctamente."
+    new_spawned_conversation: "nueva conversacion siguiendo un mensaje"
+    user_spawned_convo_description: "{{login}} ha creado esta conversacion siguiendo el mensaje {{original_message_link}}\n\nPor favor, escribe una descripcion y un titulo adecuados para esta nueva conversacion"
+    already_spawned_warning: "Ya has comenzado una nueva conversacion desde este mensaje."
+    not_allowed_to_write_warning: "No puedes escribir mensajes en esta conversacion."
+  footer:
+    uptime_monitoring: "Website Uptime Monitoring By"
+    report_problems_or_abuse: "Informa de problemas o abusos a"
+    terms_and_conditions: "Terminos y Condiciones"    
+    conversations: "conversaciones"
+  messages:
+    original_message: "mensaje original"
+    
+  datetime:
+    distance_in_words:
+      half_a_minute: 'hace medio minuto'
+      less_than_x_seconds:
+        zero: 'hace menos de 1 segundo'
+        one: 'hace 1 segundo'
+        other: 'hace {{count}} segundos'
+      x_seconds:
+        one: 'hace 1 segundo'
+        other: 'hace {{count}} segundos'
+      less_than_x_minutes:
+        zero: 'hace menos de 1 minuto'
+        one: 'hace 1 minuto'
+        other: 'hace {{count}} minutos'
+      x_minutes:
+        one: "hace 1 minuto"
+        other: "hace {{count}} minutos"
+      about_x_hours:
+        one: 'hace aproximadamente 1 hora'
+        other: 'hace {{count}} horas'
+      x_days:
+        one: 'hace 1 día'
+        other: 'hace {{count}} días'
+      about_x_months:
+        one: 'hace aproximandamente 1 mes'
+        other: 'hace {{count}} mes'
+      x_months:
+        one: 'hace 1 mes'
+        other: 'hace {{count}} mes'
+      about_x_years:
+        one: 'hace aproximadamente 1 año'
+        other: 'hace {{count}} años'
+      over_x_years:
+        one: 'hace más de 1 año'
+        other: 'hace {{count}} años'

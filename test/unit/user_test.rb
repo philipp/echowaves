@@ -1,4 +1,4 @@
-require 'test_helper'
+require File.dirname(__FILE__) + '/../test_helper'
 
 class UserTest < ActiveSupport::TestCase
   context "A User instance" do    
@@ -26,7 +26,7 @@ class UserTest < ActiveSupport::TestCase
 
     should_belong_to :personal_conversation
     
-    should "have conversations" do 
+    should "have subscriptions" do 
       @conversation1 = Factory.create(:conversation, :name => "converstaion1")
       @conversation2 = Factory.create(:conversation, :name => "converstaion2")
       @conversation3 = Factory.create(:conversation, :name => "converstaion3")
@@ -40,9 +40,44 @@ class UserTest < ActiveSupport::TestCase
       @message8 = Factory.create(:message, :conversation => @conversation2, :user => @user)
       @message9 = Factory.create(:message, :conversation => @conversation1, :user => @user)
       
-      assert_equal @user.conversations_for_user.size, 3 + 1#it's actually one more, because the user has his own conversation automatically created
+      assert_equal @user.subscribed_conversations.size, 3
     end
 
+    should_have_many :subscriptions
+    should_have_many :subscribed_conversations, :through => :subscriptions
+    should_have_many :conversations
     
+    should_have_many :conversation_visits
+
+    should_have_many :recent_conversations, :through => :conversation_visits
+    
+    should "be valid if honeypot field is blank" do
+      assert @user.valid?
+    end
+    
+    should "not be valid if honeypot field is not blank" do
+      @user.something = "spam"
+      assert !@user.valid?
+    end
+    
+    should "not change the login" do
+      @original_login = @user.login
+      @user.update_attributes( :login => 'changed' )
+      assert_equal @original_login, @user.login
+    end
   end    
+
+  context "mark last viewed as read" do
+    setup do
+      @user = Factory.create( :user )
+    end
+
+    should "do nothing if user has no subscriptions" do
+      assert_equal 0, @user.subscriptions.size
+      @user.mark_last_viewed_as_read
+      assert_equal 0, @user.subscriptions.size
+    end
+
+    should "update last viewed subscription" 
+  end
 end

@@ -1,11 +1,28 @@
 ActionController::Routing::Routes.draw do |map|
   map.resource :session
 
-  map.resources :users
+  map.resources :users, :member => {
+    :tagged_convos => :get
+  }
 
-  map.resources :conversations do |conversation|
-    conversation.resources :messages
+  map.resources :conversations, :member => { 
+    :readwrite_status   => :put, 
+    :report             => :post, 
+    :follow             => :post, 
+    :unfollow           => :post, 
+    :follow_from_list   => :post, 
+    :unfollow_from_list => :post,
+    :invite             => :get,
+    :invite_from_list   => :post
+    }, :new => { :spawn => :get } do |conversation|
+    conversation.resources :messages,
+    :member => {
+      :report => :post
+    }
   end
+  
+  map.resource :msgsearch, :only => [:show, :create]
+  map.resource :convosearch, :only => [:show, :create]
 
   map.home '/', :controller => "home", :action => "index"
   map.logout '/logout', :controller => 'sessions', :action => 'destroy'
@@ -16,12 +33,11 @@ ActionController::Routing::Routes.draw do |map|
   map.forgot_password '/forgot_password', :controller => "users", :action => "forgot_password"
   map.reset_password '/reset_password/:id', :controller   => "users", :action => "reset_password" 
   
-  map.message_poll '/message_poll', :controller => 'messages', :action => "poll"
   map.custom_styles '/stylesheets/custom.css', :controller => 'users', :action => "styles", :format => "css"
 
   map.complete_conversation_name '/complete_conversation_name', :controller => 'conversations', :action => "complete_name"
   map.complete_user_name '/complete_user_name', :controller => 'users', :action => "complete_name"
-
+  
   # The priority is based upon order of creation: first created -> highest priority.
 
   # Sample of regular route:

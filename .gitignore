@@ -4,7 +4,15 @@ tmp/**/*
 .DS_Store
 *~
 config/database.yml
+config/*.sphinx.conf
 db/*.sqlite3
 db/*.db
 data.dump
 db/data.yml
+db/schema.rb
+db/development_structure.sql
+db/sphinx/*
+public/attachments
+*.log
+coverage.data
+coverage/*

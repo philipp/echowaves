@@ -1,0 +1,18 @@
+<div class="span-5">&nbsp;</div>
+
+<div id="center" class="span-14 page">
+
+	<div class="balloon">
+		<h2 class="center"><%= link_to h(@conversation.name), conversation_path(@conversation) %></h2>
+	</div>
+
+	<%= render :partial => 'more_messages_on_top' %>
+	<div id='messages'>
+		<div id="first_message"></div>
+		<%= render :partial => 'message', :object => @message %>
+		<div id="last_message"></div>
+	</div>
+	<%= render :partial => 'more_messages_on_bottom' %>
+
+
+</div>

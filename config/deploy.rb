@@ -36,9 +36,39 @@ namespace :deploy do
   task :copy_prod_configuration do
     run "cp /u/config/#{application}/database.yml #{release_path}/config/"
 #    run "cp /u/config/#{application}/production.rb #{release_path}/config/environments/"
-   run "cp /u/config/#{application}/environment.rb #{release_path}/config/"
-   run "cp /u/config/#{application}/site_keys.rb #{release_path}/config/initializers/"
+    run "cp /u/config/#{application}/environment.rb #{release_path}/config/"
+    run "cp /u/config/#{application}/site_keys.rb #{release_path}/config/initializers/"
+    run "ln -nfs /vol/attachments #{release_path}/public/attachments"
   end
   
-  after "deploy:update_code", "deploy:copy_prod_configuration"
+  desc "Re-establish symlinks for sphinx"
+   task :after_symlink_sphinx do
+     run <<-CMD
+       rm -fr #{release_path}/db/sphinx &&
+       ln -nfs /vol/sphinx #{release_path}/db/sphinx
+     CMD
+   end
+
+   desc "reindex the sphinx server"
+   task :reindex_sphinx, :roles => :app do
+     run "cd #{current_path} && rake thinking_sphinx:index RAILS_ENV=production"
+   end
+  
+   desc "Stop the sphinx server"
+   task :stop_sphinx , :roles => :app do
+     run "cd #{current_path} && rake thinking_sphinx:stop RAILS_ENV=production"
+   end
+
+   desc "Start the sphinx server"
+   task :start_sphinx, :roles => :app do
+     run "cd #{current_path} && rake thinking_sphinx:configure RAILS_ENV=production && rake thinking_sphinx:start RAILS_ENV=production"
+   end
+
+   desc "Restart the sphinx server"
+   task :restart_sphinx, :roles => :app do
+     stop_sphinx
+     start_sphinx
+   end  
+  
+  after "deploy:update_code", "deploy:copy_prod_configuration", "deploy:after_symlink_sphinx"#, "deploy:restart_sphinx", "deploy:reindex_sphinx"
 end

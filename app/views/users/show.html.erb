@@ -1,14 +1,36 @@
-<p>
-	<%= link_to image_tag(@user.gravatar_url, :border => 0, :wigth => 40, :height => 40, :class => "avatar"), conversation_messages_path(@user.personal_conversation) %>		
-	<span class="username"><%=link_to h(@user.login), user_path(@user) %></span>
-</p>
+<%= javascript_include_tag "livepipe/livepipe" %>
+<%= javascript_include_tag "livepipe/tabs" %>
+<%= stylesheet_link_tag 'livepipe' %>
 
+<script>
+	document.observe('dom:loaded',function(){
+	new Control.Tabs('user_tabs');
+	});
+</script>
 
-<div id="conversations_for_user">
-	<b>Users conversations:</b></br>
-	<%= render :partial => 'users/conversation', :collection => @user.conversations_for_user %> 				 
+<%= render :partial => 'convo_stats' %>
+
+<%= render :partial => 'users/user_tags'%>
+
+<div class="item">
+	<div id="subscriptions_for_user">
+		<ul id="user_tabs" class="subsection_tabs">  
+			<li class="tab"><%=t("ui.following")%>:</li>  			
+			<li class="tab"><a href="#convos"><%=t("ui.convos")%></a></li>  
+			<li class="tab"><a href="#friends"><%=t("ui.users")%></a></li>  
+		</ul>  
+		<div id="convos">
+			<ul class="list">
+				<%= render :partial => 'conversations/conversation', :collection => @user.subscribed_conversations.published.not_personal %>
+			</ul>			
+		</div>  
+		<div id="friends">
+			<ul class="list">
+				<%= render :partial => 'conversations/personal_conversation', :collection => @user.friends_convos %>			  
+			</ul>
+		</div>
+	</div>
+  
+  <%= link_to t("ui.back"), users_path %>
 </div>
-	
-
-
-<%= link_to "back", users_path %>
+  

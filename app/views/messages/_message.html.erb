@@ -1,17 +1,45 @@
-<div class="message" id="<%=dom_id(message)%>">
-	<p class="messagetools">
-		<% if message.attachment.original_filename %>
-			<%= link_to message.attachment.original_filename, message.attachment.url %>
-		<% end %>
-	</p>
-	<p class="messagemeta">
-		<%= link_to image_tag(message.user.gravatar_url, :border => 0, :wigth => 40, :height => 40, :class => "avatar"), conversation_messages_path(message.user.personal_conversation) %>		
-		<span class="username"><%=link_to h(message.user.login), user_path(message.user) %></span>
-		<br/>
-		<span class="date"><%=message.created_at.to_s(:pretty_long) %></span>
-	</p>
-	<p class="messagetext">
-		<%#=message.id%>
-		<%= mark_up message.message %>
-	</p>
-</div>
+<%if message.system_message == false%>
+	<div class="message" id="<%=dom_id(message)%>">
+	  	<div class="messagelinks quiet small">
+			<% if logged_in? %>
+				<%= link_to_remote t("ui.report"), :url => report_conversation_message_path(message.conversation, message), :confirm => t("ui.reportconfirm") %>
+	      <%= link_to t("ui.spawn"), spawn_new_conversation_path(:message_id => message.id), :confirm => t("ui.spawnconfirm"), :method => :get %> <% #has to be the get in order for auth token to work %>
+			<% end %>
+		</div>
+	  <div class="avatar"><%= link_to image_tag(message.user.gravatar_url, :border => 0, :width => 40, :height => 40, :class => "avatar", :alt => message.user.login), user_path(message.user),
+		:class => 'tip', 
+		:title =>  t("users.since") + message.user.created_at.to_s(:pretty)  + 
+		'<br/>' + pluralize(message.user.conversations.size, 'convo') +
+		'<br/>' + pluralize(message.user.messages.size, 'message') +
+		'<br/>' + pluralize(message.user.subscriptions.size, 'subscription')
+	   %></div>
+		<div class="messagetext">
+	    <span class="username"><%=link_to h(message.user.login), conversation_messages_path(message.user.personal_conversation), :class => 'tip', :title =>  "personal convo for #{message.user.login}" %></span>
+			<% if message.has_attachment? %>
+	      <%= display_attachment(message) %>
+			<% end %>
+			<%= mark_up message %>
+			<span class="date quiet small"><%= link_to message.created_at.to_s(:pretty_long), conversation_message_path(message.conversation, message) %></span>
+		</div>
+		<div class="clear"></div>
+	</div>
+<%else #system_message%>
+	<div class="message system" id="<%=dom_id(message)%>">
+	  <div class="avatar"><%= link_to image_tag(message.user.gravatar_url, :border => 0, :width => 20, :height => 20, :class => "avatar", :alt => message.user.login), user_path(message.user),
+		:class => 'tip', 
+		:title =>  t("users.since") + message.user.created_at.to_s(:pretty)  + 
+		'<br/>' + pluralize(message.user.conversations.size, 'convo') +
+		'<br/>' + pluralize(message.user.messages.size, 'message') +
+		'<br/>' + pluralize(message.user.subscriptions.size, 'subscription')
+	   %></div>
+		<div class="messagetext">
+	    <span class="username"><%=link_to h(message.user.login), conversation_messages_path(message.user.personal_conversation), :class => 'tip', :title =>  "personal convo for #{message.user.login}" %></span>
+			<% if message.has_attachment? %>
+	      <%= display_attachment(message) %>
+			<% end %>
+			<%= mark_up message %>
+			<span class="date quiet small"><%= link_to message.created_at.to_s(:pretty_long), conversation_message_path(message.conversation, message) %></span>
+		</div>
+		<div class="clear"></div>
+	</div>
+<%end%>

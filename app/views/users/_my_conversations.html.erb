@@ -1,6 +1,10 @@
-<%unless current_user.blank?%>
-	<div id="my_conversations">
-		<b>My conversations:</b>
-		<%= render :partial => 'users/conversation', :collection => current_user.conversations_for_user %> 				 
-	</div>
-<%end%>
+<div id="my_conversations" class="item2">
+	<% if logged_in? %>
+	<b><%= t("ui.my_conversations") %>:</b><br/>
+	<ul>
+		<% current_user.subscribed_conversations.each do |conversation| %>
+		<li><%= link_to h(conversation.escaped_name), conversation_messages_path(conversation), :class => 'tip', :title => conversation.escaped_description %></li>
+		<% end %>
+	</ul>
+	<%end%>
+</div>

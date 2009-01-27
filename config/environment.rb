@@ -5,7 +5,7 @@
 # ENV['RAILS_ENV'] ||= 'production'
 
 # Specifies gem version of Rails to use when vendor/rails is not present
-RAILS_GEM_VERSION = '2.1.1' unless defined? RAILS_GEM_VERSION
+RAILS_GEM_VERSION = '2.2.1' unless defined? RAILS_GEM_VERSION
 
 # Bootstrap the Rails environment, frameworks, and default configuration
 require File.join(File.dirname(__FILE__), 'boot')
@@ -28,9 +28,8 @@ Rails::Initializer.run do |config|
 
   config.gem "gravtastic"
 #  config.gem "BlueCloth"
-  config.gem "paperclip"
+  # config.gem "paperclip"
   config.gem "stomp"
-
   # Only load the plugins named here, in the order given. By default, all plugins 
   # in vendor/plugins are loaded in alphabetical order.
   # :all can be used as a placeholder for all plugins not explicitly named
@@ -74,23 +73,21 @@ Rails::Initializer.run do |config|
   # The user observer goes inside the Rails::Initializer block
   # !!!!!!!!!!!!!the following line must be uncommented in production for users to be able to register
   # config.active_record.observers = :user_observer
-
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.delivery_method = :smtp
 end
+
 
 # active mailer configuration
 # First, specify the Host that we will be using later for user_notifier.rb
 HOST = 'http://localhost:3000'
 
-
-# Third, add your SMTP settings
 ActionMailer::Base.delivery_method = :smtp
+# Third, add your SMTP settings
 ActionMailer::Base.smtp_settings = {
-  :address => "mail.echowaves.com",
+  :address => "mail.rmgapps.com",
   :port => 25,
-  :domain => "localhost:3000",
-  :user_name => "carmelyne@echowaves.com",
-  :password => "yourrailsapp",
-  :authentication => :login
+  :domain => "rmg-ny.com"
 }
 
 
@@ -100,4 +97,7 @@ ORBITED_DOMAIN = 'localhost'
 STOMP_HOST = 'localhost'
 STOMP_PORT = '61613'
 
-REFRESH_FREQUINCY = 60
+HOME_CONVERSATION = 1
+
+#override to false in production
+SHOW_ACTIVATION_LINK=true
