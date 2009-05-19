@@ -1,13 +1,51 @@
+# == Schema Info
+# Schema version: 20090514235226
+#
+# Table name: conversations
+#
+#  id                    :integer(4)      not null, primary key
+#  parent_message_id     :integer(4)
+#  user_id               :integer(4)
+#  delta                 :boolean(1)
+#  description           :text
+#  messages_count        :integer(4)      default(0)
+#  name                  :string(255)
+#  personal_conversation :boolean(1)
+#  private               :boolean(1)
+#  read_only             :boolean(1)
+#  something             :string(255)     default("")
+#  subscriptions_count   :integer(4)      default(0)
+#  created_at            :datetime
+#  posted_at             :datetime
+#  updated_at            :datetime
+
 require File.dirname(__FILE__) + '/../test_helper'
 
 class ConversationTest < ActiveSupport::TestCase
+  
+  context "Conversation named scopes" do
+    fixtures :users, :conversations, :subscriptions
+    
+    should "find convos no owned by a concrete user" do
+      @no_from_crossblaim = Conversation.no_owned_by(users(:crossblaim).id)
+      @no_from_dmitry = Conversation.no_owned_by(users(:dmitry).id)
+      assert_equal 2, @no_from_crossblaim.size
+      assert_equal 3, @no_from_dmitry.size
+      assert @no_from_crossblaim.include?(conversations(:dmitry_personal_convo))
+      assert @no_from_crossblaim.include?(conversations(:akira_personal_convo))
+      assert @no_from_dmitry.include?(conversations(:crossblaim_personal_convo))
+      assert @no_from_dmitry.include?(conversations(:akira_personal_convo))
+      assert @no_from_dmitry.include?(conversations(:crossblaim_test_public_convo))
+    end
+  end
+  
   context "A Conversation instance" do    
     setup do
       @conversation = Factory.create(:conversation)
     end
     
-    should_require_attributes :name, :description
-    should_require_unique_attributes :name
+    should_validate_presence_of :name, :description
+    should_validate_uniqueness_of :name
 
     should_have_index :name
     should_have_index :created_at
@@ -61,9 +99,6 @@ class ConversationTest < ActiveSupport::TestCase
     should_have_many :users, :through => :subscriptions
     should_have_many :recent_followers, :through => :subscriptions          
     
-    should_have_many :abuse_reports
-    should_belong_to :abuse_report
-
     should_belong_to :parent_message #parent message it was spawned from
     should_have_index :parent_message_id
     
@@ -77,6 +112,43 @@ class ConversationTest < ActiveSupport::TestCase
     should "not be valid if honeypot field is not blank" do
       @conversation.something = "spam"
       assert !@conversation.valid?
+      @conversation.something = " "
+      assert !@conversation.valid?
+    end
+  end
+  
+  context "A private conversation" do
+    setup do
+      @owner = Factory.create(:user, :login => "user1")
+      @conversation = Factory.create(:conversation, :user => @owner)      
+      @follower = Factory.create(:user, :login => "user2")
+      @follower.follow(@conversation)
+      @conversation.update_attributes(:private => true)
+      @no_follower = Factory.create(:user, :login => "user3")
+    end
+    
+    should "be writable by the owner" do
+      assert @conversation.writable_by?(@owner)
+    end
+    
+    should "not be writable by the users what are not followers of this convo" do
+      assert !@conversation.writable_by?(@no_follower)
+    end
+    
+    should "be writable by the users what are following this convo" do
+      assert @conversation.writable_by?(@follower)
+    end
+    
+    should "be readable by the owner" do
+      assert @conversation.readable_by?(@owner)
+    end
+    
+    should "not be readable by the users what are not followers of this convo" do
+      assert !@conversation.readable_by?(@no_follower)
+    end
+    
+    should "be readable by the users what are following this convo" do
+      assert @conversation.readable_by?(@follower)
     end
   end
   
@@ -192,13 +264,13 @@ class ConversationTest < ActiveSupport::TestCase
 
     should "add a new user subscription" do
       assert_equal 1, @conversation.subscriptions.size # convo owner is subscribed by default
-      assert_equal false, @conversation.followed?( @user )
+      assert_equal false, @conversation.followed_by?( @user )
 
       @conversation.add_subscription( @user )
       @conversation.reload
 
       assert_equal 2, @conversation.subscriptions.size
-      assert @conversation.followed?( @user )
+      assert @conversation.followed_by?( @user )
     end
 
     should "remove a user subscription" do
@@ -216,45 +288,6 @@ class ConversationTest < ActiveSupport::TestCase
       assert_equal 1, @conversation.subscriptions.size
     end
   end
-
-  context "Abuse reports" do
-    setup do
-      @owner = Factory.create( :user )
-      @conversation = Factory.create( :conversation, :user => @owner )
-    end
-
-    should "create a new abuse report" do
-      assert_equal 0, @conversation.abuse_reports.size
-      @conversation.report_abuse( Factory.create( :user ) )
-      assert_equal 1, @conversation.abuse_reports.size
-    end
-
-    should "only allow one abuse report per user" do
-      user = Factory.create( :user )
-      @conversation.report_abuse( user )
-      assert_equal 1, @conversation.abuse_reports.size
-      @conversation.report_abuse( user )
-      assert_equal 1, @conversation.abuse_reports.size
-    end
-
-    should "check against abuse report limit" do
-      assert_equal false, @conversation.over_abuse_reports_limit?
-      assert @conversation.published?
-      (1..CONVERSATION_ABUSE_THRESHOLD).each do |num|
-        @conversation.report_abuse( Factory.create( :user ) )
-        assert_equal false, @conversation.over_abuse_reports_limit?
-      end
-      @conversation.report_abuse( Factory.create( :user ) )
-      assert @conversation.over_abuse_reports_limit?
-      assert_equal false, @conversation.published?
-    end
-
-    should "unpublish if conversation owner reported the abuse" do
-      assert @conversation.published?
-      @conversation.report_abuse( @owner )
-      assert_equal false, @conversation.published?
-    end
-  end # context 'Abuse reports'
 
   context "notify of new spawn" do
     setup do

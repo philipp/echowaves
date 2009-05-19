@@ -3,7 +3,7 @@ class UserMailer < ActionMailer::Base
   def signup_notification(user)
     setup_email(user)
     @subject    += 'Please activate your new account'
-    @body[:url]  = "#{HOST}/activate/#{user.activation_code}"
+    @body[:url]  = "#{HOST}/activate/#{user.perishable_token}"
   end
   
   def activation(user)
@@ -11,25 +11,33 @@ class UserMailer < ActionMailer::Base
     @subject    += 'Your account has been activated!'
     @body[:url]  = "#{HOST}"
   end
-
-  def forgot_password(user)
+  
+  def password_reset_instructions(user)
     setup_email(user)
-    @subject    += 'You have requested to change your password'
-    @body[:url]  = "#{HOST}/reset_password/#{user.password_reset_code}" 
+    @subject    += "Password Reset Instructions"
+    body        :edit_password_reset_url => edit_password_reset_url(user.perishable_token)
+  end
+  
+  def private_invite_instructions(user, convo_id, convo_name, token)
+    setup_email(user)
+    @subject    += "You're invited to participate in a private conversation"
+    body        :follow_conversation_url => follow_with_token_conversation_url(convo_id, :token => token), :convo_name => convo_name
   end
 
-  def reset_password(user)
+  def public_invite_instructions(user, convo_id, convo_name)
     setup_email(user)
-    @subject    += 'Your password has been reset.'
+    @subject    += "You're invited to participate in a conversation"
+    body        :follow_conversation_url => follow_with_token_conversation_url(convo_id, :token => nil), :convo_name => convo_name
   end
   
 protected
   
   def setup_email(user)
+    default_url_options[:host] = HOST[7..-1]
     @recipients  = "#{user.email}"
-    @bcc         = "dmitry@rootlocusinc.com" #email monitoring log, do not erase
-    @from        = "support@echowaves.com"
-    @subject     = "[echowaves.com] "
+    @bcc         = BCC # email monitoring log, do not erase
+    @from        = FROM
+    @subject     = SUBJECT
     @sent_on     = Time.now
     @body[:user] = user
   end

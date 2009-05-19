@@ -154,7 +154,7 @@ class ConversationsControllerTest < ActionController::TestCase
     setup do
       @convo = Factory.create( :conversation )
       @convos = [@convo]
-      Conversation.expects( :published ).returns( @convos )
+      Conversation.expects( :non_private ).returns( @convos )
       @convos.expects( :not_personal ).returns( @convos )
       @convos.expects( :paginate ).returns( @convos )
       @convos.stubs( :total_pages ).returns( 1 )
@@ -255,24 +255,6 @@ class ConversationsControllerTest < ActionController::TestCase
     end
   end # context readwrite_status action
 
-  context "report action" do
-    setup do
-      @convo = Factory.create( :conversation )
-      Conversation.expects( :find ).with( '1' ).returns( @convo )
-      @convo.stubs( :report_abuse )
-    end
-
-    should "call report abuse" do
-      @convo.expects( :report_abuse ).with( @current_user )
-      put :report, :id => '1'
-    end
-
-    should "render nothing" do
-      put :report, :id => '1'
-      assert_response 200
-    end
-  end # context report action
-
   context "follow action" do
     setup do
       @convo = Factory.create( :conversation )
@@ -320,19 +302,26 @@ class ConversationsControllerTest < ActionController::TestCase
 
   context "show action" do
     setup do
-      @convo = Factory.create( :conversation )
+      @conversation = Factory(:conversation, :user => @user)
+      @message = Factory(:message, :message => "some random message", :conversation => @conversation, :user => @current_user )
+      @message.stubs( :to_xml ).returns( 'XML' )
     end
-
-    should "find the conversation" do
-      Conversation.expects( :find ).with( '1' ).returns( @convo )
-      get :show, :id => '1'
+    
+    should "call user#conversation_visit_update when logged_in? AJAX" do
+      @current_user.expects( :conversation_visit_update ).with( @conversation )
+      xhr :get, :show, :id => @conversation
     end
-
-    should "redirect to the convo messages path" do
-      Conversation.expects( :find ).with( '1' ).returns( @convo )
-      get :show, :id => '1'
-      assert_redirected_to conversation_messages_path( @convo )
-    end
+    
+    # should "find the conversation" do
+    #   Conversation.stubs( :find ).with( '1' ).returns( @convo )
+    #   get :show, :id => '1'
+    #   assert assigns( :conversation )
+    # end
+    # 
+    # should "find and assign the published conversation messages" do
+    #   get :show, :id => @convo.id
+    #   assert assigns( :messages )
+    # end
   end # context show action
 
   context "complete_name action" do
@@ -345,10 +334,10 @@ class ConversationsControllerTest < ActionController::TestCase
       get :complete_name, :id => 'foobar'
     end
 
-    should "redirect to the conversation message path" do
+    should "redirect to the conversation path" do
       Conversation.expects( :find_by_name ).with( 'foobar' ).returns( @convo )
       get :complete_name, :id => 'foobar'
-      assert_redirected_to conversation_messages_path( @convo )
+      assert_redirected_to conversation_path( @convo )
     end
   end # context complete_name action
 

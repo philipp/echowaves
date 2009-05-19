@@ -5,14 +5,12 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<meta name="Description" content="Opensource Group Chat Social Network written in Ruby On Rails, Conversation: <%= @conversation.name %>">
-	<title>Group Chat Social Network -- Convo: <%=@conversation.name-%></title>
+	<title><%=@conversation.name-%> | EchoWaves (Group Chat Social Network)</title>
   <link rel="shortcut icon" href="/images/favicon.ico" />
  	
   <link rel="stylesheet" href="/stylesheets/screen.css" type="text/css" media="screen, projection">
   <link rel="stylesheet" href="/stylesheets/print.css" type="text/css" media="print"> 
-  <!--[if IE]>
-    <link rel="stylesheet" href="/stylesheets/ie.css" type="text/css" media="screen, projection">
-  <![endif]-->
+
   <link rel="stylesheet" href="/stylesheets/style.css" type="text/css" media="screen, projection">
   <%= stylesheet_link_tag 'livepipe' %>
  	<%= stylesheet_link_tag 'default' %>
@@ -22,76 +20,107 @@
  	<%= javascript_include_tag "misc" %>
  	<%= javascript_include_tag "windowmanager" %>
  	<%= javascript_include_tag "keyboard" %>
-
-
+ 	
 	<%= stylesheet_link_tag 'unitip' %>
 	<%= javascript_include_tag 'unitip' %>
-	
-	<% if logged_in? %>
+	<%= javascript_include_tag "ejs" %>
+  
+	<!--[if IE]>
+    <link rel="stylesheet" href="/stylesheets/ie.css" type="text/css" media="screen, projection">
+  <![endif]-->
 	
  	<%= orbited_javascript %> 		
- 	<script>
+ 	<script>  
+  // FIXME: workaround for safari never ending loading issue
+  var orig_chooseTransport = Orbited.util.chooseTransport; 
+  Orbited.util.chooseTransport = function() { 
+      if (BrowserDetect.browser == "Safari") { 
+          return Orbited.CometTransports.LongPoll 
+      } 
+      return orig_chooseTransport(); 
+  }
+  
  	function stomp_function() {
  		 var output = $('connection_stat_data');
  		// set up shell.
  		// set up stomp client.
  		stomp = new STOMPClient();
  		stomp.onopen = function() {
- 			output.update('<span class="status_yellow"><%= t("ui.transport_opened") %></span>');
+			output.title = "connecting"
+ 			output.update('<span class="status_yellow tip">&nbsp;</span>');
  		};
  		stomp.onclose = function(code) {
- 			output.update('<span class="status_red"><%= t("ui.transport_closed") %> (<%= t("ui.code") %>: ' + code + ')</span>');
+ 			output.update('<span class="status_red tip" title="disconnected">&nbsp;</span>');
  			//try to reconnect
  			// stomp.connect(document.domain, 61613, 'UNIQUE_ID_PER_CLIENT', '');
-			stomp.connect('<%=STOMP_HOST%>', <%=STOMP_PORT%>, '<%=current_user.id%>', '');
-			// stomp.subscribe('CONVERSATION_CHANNEL_<%=@conversation.id%>', {exchange:''});
-	 		
-	 		setTimeout("stomp.subscribe('CONVERSATION_CHANNEL_<%=@conversation.id%>', {exchange:''})",5000);
-
+			stomp.connect('<%=STOMP_HOST%>', <%=STOMP_PORT%>, '<%=h current_user %>', '');
+			// stomp.subscribe('CONVERSATION_CHANNEL_<%=@conversation.id%>', {exchange:''});	 		
  		};
  		stomp.onerror = function(error) {
  			alert("onerror: " + error);
- 			output.update('<span class="status_red">onerror: ' + error + '</span>');
+ 			output.update('<span class="status_red tip" title="error">&nbsp;</span>');
  		};
  		stomp.onerrorframe = function(frame) {
  			alert("onerrorframe: " + frame.body);
- 			output.update('<span class="status_red">onerrorframe: ' + frame.body + '</span>');
+ 			output.update('<span class="status_red tip" title="frame error">&nbsp;</span>');
  		};
  		stomp.onconnectedframe = function() {
- 			output.update('<span class="status_green"><%= t("ui.connected") %></span>');
+ 			output.update('<span class="status_green tip" title="receiving message">&nbsp;</span>');
+			stomp.subscribe('CONVERSATION_CHANNEL_<%=@conversation.id%>', {exchange:''});
  		};
  		stomp.onmessageframe = function(frame) {
+ 		  var json = frame.body.evalJSON();
  			var message_output = $('messages');
 			// this is an actual message for current conversation
  			if(frame.headers['destination'].startsWith("CONVERSATION_CHANNEL_") ) {
- 				message_output.insert({"bottom":frame.body});
+ 			  // render message from JSON
+ 			  //---------------------------------------------------------------------------
+ 			  var html = new EJS({url: '/templates/message.ejs'}).render(json);
+ 				message_output.insert({"bottom":html});
+        if(json.meta.system == false) { unitipize($('tip_'+json.message.id)); }
  				Misc.pageScroll();
+				Effect.Pulsate('connection_stat_data'); 
+			<% if session[:sound] == "on" %>
 				Sound.play('/sounds/sound39.mp3');
+			<% end %>
  			}	
 			// this is a notify conversation message
  			if(frame.headers['destination'].startsWith("CONVERSATION_NOTIFY_CHANNEL_") ) {
 			}
 
  		};
-		stomp.connect('<%=STOMP_HOST%>', <%=STOMP_PORT%>, 'user_<%=current_user.id%>', '');
-		// stomp.subscribe('CONVERSATION_CHANNEL_<%=@conversation.id%>', {exchange:''});
- 		setTimeout("stomp.subscribe('CONVERSATION_CHANNEL_<%=@conversation.id%>', {exchange:''})", 5000);
+		stomp.connect('<%=STOMP_HOST%>', <%=STOMP_PORT%>, 'user_<%=h current_user %>', '');
+ 		// setTimeout("stomp.subscribe('CONVERSATION_CHANNEL_<%=@conversation.id%>', {exchange:''})", 5000);
 
  	};
 
   </script>
-  <%end#if user is not logged in, no point in connecting to orbited%>
   <%= javascript_include_tag "livepipe/livepipe" %>
   <%= javascript_include_tag "livepipe/tabs" %>
 
   <script>
   	document.observe('dom:loaded',function(){
   	new Control.Tabs('convo_tabs');
+  	
+  	new Ajax.Request('/conversations/<%= @conversation.id %>',
+      {
+        method:'get',
+        onSuccess: function(transport){
+          var response = transport.responseText || "error, no responseText";
+          var json = response.evalJSON();
+          var html = new EJS({url: '/templates/chat.ejs'}).render(json);
+          $('messages').insert({"bottom":html});
+          $('load-indicator').hide();
+          Misc.pageScroll();
+        },
+        onFailure: function(){ alert('Something went wrong...') }
+      });
+      
   	});
   </script>
 </head>
 
-<body id="messages_layout" onLoad="Misc.focusInput('message_message');Misc.pageScroll();stomp_function();">
+<body id="messages_layout" onLoad="Misc.focusInput('message_message');stomp_function();">
 
 	<div id="header_container"><%= render(:partial => "shared/header") %></div>
 	
@@ -100,19 +129,21 @@
     
 		<div id="col1" class="span-14">
 		    <%= flash_messages %>
+  		  <% if (logged_in? && @conversation.readable_by?(current_user)) || !@conversation.private? %>
+  		  
   		  <%= yield  %>
   		  
   		  <div id="attachment_form" style="display:none"><div id="attachment_form_padding">
     	    <%#this form is purely for attachments handling%>
     	    <% form_for(:message, 
-    	    	:url  => { :action => "upload_attachment" },
+    	    	:url  => { :controller => "messages", :action => "upload_attachment", :conversation_id => @conversation.id },
     	      :html => { :multipart => true, :target => "upload_frame", :id => 'atchform' } ) do |f| %>
     	        <%= f.file_field :attachment %>
     	    	  <input type="hidden" name="conversation_id" id="conversation_id" value="<%= @conversation.id %>" />
     	    	  <p id="attach_msgtextarea">        
                 <%= f.text_area :message, :onkeyup => "FitToTextAndMoveMessagesUp(this, (document.viewport.getHeight() - 300));Misc.pageScroll();", :class => 'messageinput', :id => "attch_message" %>  
               </p>
-              <p class="out_of_screen"><%= label_tag "important" %><%= f.text_field :something %></p>
+              <p class="out_of_screen"><%= label_tag "important" %><input id="message_something" name="message[something]" onfocus="javascript:$('attch_message').focus()" size="30" type="text" /></p>
     	    	  <%= submit_tag t("ui.attach") %>
     	    	  <%= link_to_function t("ui.cancel") do |page|
                 page[:attachment_form].hide
@@ -139,7 +170,7 @@
                 :condition => "$('message_message').value.strip().length > 0",
                 :html => {:id => 'msgform'}) do |f| %>
                  
-                <p class="out_of_screen"><%= label_tag "important" %><%= f.text_field :something %></p>
+                <p class="out_of_screen"><%= label_tag "important" %><input id="message_something" name="message[something]" onfocus="javascript:$('message_message').focus()" size="30" type="text" /></p>
                 
                 <p id="msgtextarea">        
                   <%= f.text_area :message, :onkeyup => "FitToTextAndMoveMessagesUp(this, (document.viewport.getHeight() - 300));Misc.pageScroll();", :class => 'messageinput' %>  
@@ -166,18 +197,21 @@
           
         
         </div></div>
+        <% else %>
+  		    <h4 class="center">Sorry, this is a private conversation</h4>
+  		  <% end %>
 		</div>
 		
     <div id="sidebars" class="span-10 last">
       &nbsp;
       <div id="sidebars_container">
 	      
-			  <%= render :partial => 'convo_controls' %>
+			  <%= render :partial => 'messages/convo_controls' %>
 		
         
       	<ul id="convo_tabs" class="subsection_tabs span-10">  
       		<li class="tab"><a href="#dashboard">dashboard</a></li>  
-      		<li class="tab"><a href="#tags">tags</a></li>
+      		<!-- <li class="tab"><a href="#tags">tags</a></li> -->
       		<li class="tab"><a href="#followers">followers</a></li>
       	</ul>
       		
@@ -187,14 +221,25 @@
 		        <%= render :partial => 'users/news' %>
 		      </div>
 		      <div class="span-4 last">
+		        <div id="recent_followers" class="item2 page">
+            	<h6><%= t("ui.messages") %>:</h6>
+            	<%= link_to t("ui.all"), conversation_path(@conversation)%><br/>
+              <%= link_to t("ui.with_files"), files_conversation_path(@conversation)%><br/>
+              <%= link_to t("ui.with_images"), images_conversation_path(@conversation)%>
+            </div>
+		        
 		        <%= render :partial => 'conversations/recent_followers' %>
-		        <%= render :partial => 'conversations/last_convo_tags' %>
+		        <%# render :partial => 'conversations/last_convo_tags' %>
 		      </div>
 		    </div>
 		    
-		    <div id="tags"  class="span-10">
-		      <%= render :partial => 'conversations/convo_tags' %>
-        </div>
+		    <!--
+		      # removed tags stuff
+		      #------------------------------------------------------------------------------
+		      <div id="tags"  class="span-10">
+		        <%# render :partial => 'conversations/convo_tags' %>
+          </div>
+        -->
         
         <div id="followers"  class="span-10">
 		      <%= render :partial => 'conversations/users_in_conversation' %>
@@ -208,9 +253,11 @@
 	<div id="footer_container"><%= render(:partial => "shared/footer") %></div>
 
 	<%#for now lets poll for new messages in conversations that are off the screen%>  
-	<%= periodically_call_remote :url => {:controller => 'users', :action => 'update_news'}, 
-		:frequency => 60, :complete => 'ShowUnreadMessagesInFLuidapp();' %> 
-	
-
+	<%= periodically_call_remote :url => {:controller => 'users', :action => 'update_news', :conversation_id => @conversation.id}, 
+		:frequency => 60, :complete => 'ShowUnreadMessagesInFLuidapp();' %>
+  
+  <%#do not remove rhis scrips tag, used by google stats, ie6 detector, etc...%>
+  <%#----------------------------------------------------------------------------%>
+  <%= render :partial => "shared/scripts"%>
 </body>
 </html>

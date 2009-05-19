@@ -5,7 +5,6 @@ require 'users_controller'
 class UsersController; def rescue_action(e) raise e end; end
 
 class UsersControllerTest < ActionController::TestCase
-  # fixtures :users
 
   def test_should_allow_signup
     assert_difference 'User.count' do
@@ -47,7 +46,8 @@ class UsersControllerTest < ActionController::TestCase
   end
 
   def test_complete_name_action
-    user = Factory.create( :user )
+    user = Factory.create( :user )    
+    
     User.expects( :find_by_name ).with( user.name ).returns( user )
     get :complete_name, :id => user.name 
     assert assigns( :user )
@@ -55,6 +55,12 @@ class UsersControllerTest < ActionController::TestCase
   end
   
   def test_should_return_users_on_index
+    user = Factory.create( :user )
+    followers = [ Factory.create( :user ), Factory.create(:user) ]
+    convo = Factory.create( :conversation )
+    user.stubs( :personal_conversation ).returns( convo )
+    convo.stubs( :users ).returns( followers )
+    User.expects( :find ).returns( [user] )
     get :index
     assert assigns( :users )
     assert_response :success
@@ -63,6 +69,7 @@ class UsersControllerTest < ActionController::TestCase
 
   def test_should_find_and_return_user_on_show
     user = Factory.create( :user )
+    user.activate!    
     get :show, :id => user.id
     assert assigns( :user )
     assert_response :success
@@ -78,7 +85,8 @@ class UsersControllerTest < ActionController::TestCase
 
   def test_should_return_current_user_for_edit_action
     user = Factory.create( :user )
-    @request.session[:user_id] = user.id
+    user.activate!
+    set_session_for(user)
     get :edit
     assert assigns( :user )
     assert_equal assigns( :user ), user

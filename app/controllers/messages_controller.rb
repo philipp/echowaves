@@ -4,23 +4,16 @@ class MessagesController < ApplicationController
   
   public :render_to_string # this is needed to make render_to_string public for message model to be able to use it
   
-  before_filter :login_required, :except => [:index, :show, :get_more_messages ]
+  before_filter :login_or_oauth_required, :except => [:index, :show, :get_more_messages ]
   before_filter :find_conversation, :except => [ :send_data, :auto_complete_for_tag_name]
-  before_filter :check_write_access, :only => [ :create ]
-  after_filter :store_location, :only => [:index]  
+  before_filter :check_write_access, :only => [ :create, :upload_attachment ]
+  before_filter :check_read_access, :except => [ :index, :upload_attachment, :report ]
 
   auto_complete_for :tag, :name
   
   def index
-    @messages = @conversation.messages.published.find(:all, :include => [:user], :limit => 100, :order => 'id DESC').reverse
-    current_user.conversation_visit_update(@conversation) if logged_in?
-    
-    @has_more_messages = @conversation.has_messages_before?(@messages.first)
-
-    respond_to do |format|
-      format.html # index.html.erb
-      format.xml  { render :xml => @messages }
-    end
+    headers["Status"] = "301 Moved Permanently"
+    redirect_to conversation_path(@conversation) 
   end
 
   #TODO: get_more_messages, get_more_messages_on_top, get_more_messages_on_bottom need to be refactored into something more generic
@@ -54,14 +47,17 @@ class MessagesController < ApplicationController
 
   def create
     @message = @conversation.messages.new(params[:message])
-    
+
     respond_to do |format|
       if current_user.messages << @message
-        format.html { redirect_to(conversation_messages_path(@conversation)) }
-        format.xml { render :xml => @message, :status => :created, :location => @message }
+        format.html { redirect_to(conversation_path(@conversation)) }
+        format.xml { 
+          @message.send_stomp_message
+          render :xml => @message, :status => :created, :location => conversation_message_url(@message.conversation_id, @message)
+        }
         format.js {
           # send a stomp message for everyone else to pick it up
-          @message.send_stomp_message(self)
+          @message.send_stomp_message
           render :nothing => true
         }
       else
@@ -80,7 +76,7 @@ class MessagesController < ApplicationController
 
     if @conversation.messages << @message
       # send a stomp message for everyone else to pick it up
-      @message.send_stomp_message(self)
+      @message.send_stomp_message
     end
     # FIXME: this not work yet, because we are calling this action from an iframe,
     # and the RJS can't access the document.
@@ -99,58 +95,27 @@ class MessagesController < ApplicationController
     message.report_abuse(current_user)
     render :nothing => true
   end
-
-  # def spawn_conversation
-  #   @message = Message.find(params[:id])
-  # 
-  #   if current_user.conversations.find_by_parent_message_id( @message.id )
-  #     flash[:error] = "You already spawned a new conversation from this message."
-  #     redirect_to conversation_messages_path(@conversation)
-  #     return
-  #   end
-  #   
-  #   spawned_conversation = @message.spawn_new_conversation( current_user )
-  #   
-  #   # create a message in the original conversation notifying about this spawning
-  #   # and send realtime notification to everyone who's listening
-  #   notification_message = @conversation.notify_of_new_spawn( current_user, spawned_conversation, @message )
-  #   notification_message.send_stomp_message(self) unless notification_message == nil
-  #       
-  #   redirect_to conversation_messages_path(spawned_conversation)
-  # end
   
-  private
+private
 
   def find_conversation
-    @conversation = Conversation.published.find( params[:conversation_id] )
+    @conversation = Conversation.find( params[:conversation_id] )
   end
   
   def check_write_access
     unless @conversation.writable_by?(current_user)
       flash[:error] = t("conversations.not_allowed_to_write_warning")
-      redirect_to conversation_messages_path(@conversation)
+      redirect_to conversation_path(@conversation)
       return
     end
   end
   
-  # def send_stomp_message(message)
-  #   newmessagescript = render_to_string :partial => 'message', :object => message
-  #   s = Stomp::Client.new
-  #   s.send("CONVERSATION_CHANNEL_" + params[:conversation_id], newmessagescript)
-  #   s.close
-  # rescue SystemCallError
-  #   logger.error "IO failed: " + $!
-  #   # raise
-  # end
-  
-  # def send_stomp_notifications
-  #   s = Stomp::Client.new
-  #   s.send("CONVERSATION_NOTIFY_CHANNEL_" + params[:conversation_id], "1")
-  #   # puts ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CONVERSATION_NOTIFY_CHANNEL_" + params[:conversation_id])
-  #   s.close
-  # rescue SystemCallError
-  #   logger.error "IO failed: " + $!
-  #   # raise
-  # end
+  def check_read_access
+    unless @conversation.readable_by?(current_user) || !@conversation.private?
+      flash[:error] = t("errors.sorry_this_is_a_private_convo")
+      redirect_to conversations_path
+      return
+    end
+  end
   
 end

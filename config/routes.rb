@@ -1,82 +1,51 @@
 ActionController::Routing::Routes.draw do |map|
-  map.resource :session
+  
+  map.resource  :user_session
+  map.resources :password_resets
+  map.resource  :msgsearch, :only => [:show, :create]
+  map.resource  :convosearch, :only => [:show, :create]
+  map.resources :users, :member =>  { :tagged_convos => :get,
+                                      :followers => :get,
+                                      :followed_users => :get,
+                                      :followed_convos => :get
+                                    }
 
-  map.resources :users, :member => {
-    :tagged_convos => :get
-  }
-
-  map.resources :conversations, :member => { 
-    :readwrite_status   => :put, 
-    :report             => :post, 
-    :follow             => :post, 
-    :unfollow           => :post, 
-    :follow_from_list   => :post, 
+  map.resources :conversations, :collection => {:bookmarked => :get}, :member => {
+    :private_status     => :put,
+    :readwrite_status   => :put,
+    :toogle_bookmark    => :post,
+    :follow             => :post,
+    :follow_with_token  => :get,
+    :unfollow           => :post,
+    :follow_from_list   => :post,
     :unfollow_from_list => :post,
     :invite             => :get,
-    :invite_from_list   => :post
+    :invite_from_list   => :post,
+    :remove_user        => :post,
+    :files              => :get,
+    :images             => :get
     }, :new => { :spawn => :get } do |conversation|
-    conversation.resources :messages,
-    :member => {
-      :report => :post
-    }
-  end
+      conversation.resources :messages, :member => { :report => :post }, 
+                                        :except => [:edit, :update, :destroy]
+    end
   
-  map.resource :msgsearch, :only => [:show, :create]
-  map.resource :convosearch, :only => [:show, :create]
-
+  # OAuth routes
+  map.resources :oauth_clients
+  map.authorize '/oauth/authorize',:controller=>'oauth',:action=>'authorize'
+  map.request_token '/oauth/request_token',:controller=>'oauth',:action=>'request_token'
+  map.access_token '/oauth/access_token',:controller=>'oauth',:action=>'access_token'
+  map.test_request '/oauth/test_request',:controller=>'oauth',:action=>'test_request'
+            
   map.home '/', :controller => "home", :action => "index"
-  map.logout '/logout', :controller => 'sessions', :action => 'destroy'
-  map.activate '/activate/:activation_code', :controller           => "users", :action => "activate"
-  map.login '/login', :controller => 'sessions', :action => 'new'
-  map.register '/register', :controller => 'users', :action => 'create'
+  map.login '/login', :controller => 'user_sessions', :action => 'new'
+  map.logout '/logout', :controller => 'user_sessions', :action => 'destroy'
   map.signup '/signup', :controller => 'users', :action => 'new'
-  map.forgot_password '/forgot_password', :controller => "users", :action => "forgot_password"
-  map.reset_password '/reset_password/:id', :controller   => "users", :action => "reset_password" 
+  map.activate '/activate/:perishable_token', :controller => "users", :action => "activate"
   
-  map.custom_styles '/stylesheets/custom.css', :controller => 'users', :action => "styles", :format => "css"
-
   map.complete_conversation_name '/complete_conversation_name', :controller => 'conversations', :action => "complete_name"
   map.complete_user_name '/complete_user_name', :controller => 'users', :action => "complete_name"
   
-  # The priority is based upon order of creation: first created -> highest priority.
-
-  # Sample of regular route:
-  #   map.connect 'products/:id', :controller => 'catalog', :action => 'view'
-  # Keep in mind you can assign values other than :controller and :action
-
-  # Sample of named route:
-  #   map.purchase 'products/:id/purchase', :controller => 'catalog', :action => 'purchase'
-  # This route can be invoked with purchase_url(:id => product.id)
-
-  # Sample resource route (maps HTTP verbs to controller actions automatically):
-  #   map.resources :products
-
-  # Sample resource route with options:
-  #   map.resources :products, :member => { :short => :get, :toggle => :post }, :collection => { :sold => :get }
-
-  # Sample resource route with sub-resources:
-  #   map.resources :products, :has_many => [ :comments, :sales ], :has_one => :seller
-  
-  # Sample resource route with more complex sub-resources
-  #   map.resources :products do |products|
-  #     products.resources :comments
-  #     products.resources :sales, :collection => { :recent => :get }
-  #   end
-
-  # Sample resource route within a namespace:
-  #   map.namespace :admin do |admin|
-  #     # Directs /admin/products/* to Admin::ProductsController (app/controllers/admin/products_controller.rb)
-  #     admin.resources :products
-  #   end
-
-  # You can have the root of your site routed with map.root -- just remember to delete public/index.html.
-  # map.root :controller => "welcome"
-
-  # See how all your routes lay out with "rake routes"
-
-  # Install the default routes as the lowest priority.
-  # Note: These default routes make all actions in every controller accessible via GET requests. You should
-  # consider removing the them or commenting them out if you're using named routes and resources.
   map.connect ':controller/:action/:id'
   map.connect ':controller/:action/:id.:format'
+  
 end

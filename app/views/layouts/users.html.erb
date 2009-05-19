@@ -4,8 +4,8 @@
 <html lang="en">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<meta name="Description" content="Users <%=@user ? @user.login : ""-%> <%=@tag-%>" >
-	<title>Group Chat Social Network -- Users: <%=@user ? @user.login : ""-%> <%=@tag-%></title>
+	<meta name="Description" content="<%=@user ? @user.name_and_nick : 'Users'-%> | EchoWaves (Group Chat Social Network) <%=@tag-%>" >
+	<title><%=@user ? @user.name_and_nick : "Users"-%> | EchoWaves (Group Chat Social Network) <%=@tag-%></title>
   <link rel="shortcut icon" href="/images/favicon.ico" />
  	
   <link rel="stylesheet" href="/stylesheets/screen.css" type="text/css" media="screen, projection">
@@ -49,6 +49,10 @@
         <% end %>
         
 		    <div id="col2" class="span-6">
+          <% if logged_in? && @user && @current_user == @user %>
+            <%= render :partial => 'users/api_key' %>
+          <% end %>
+          
 		      <%= render :partial => 'users/recently_visited' %>
 		      <%= render :partial => 'users/news' %>
 		    </div>
@@ -62,6 +66,8 @@
 	<%= periodically_call_remote :url => {:controller => 'users', :action => 'update_news'}, 
 		:frequency => 60*5, :complete => 'ShowUnreadMessagesInFLuidapp();' %> 
 	
-
+  <%#do not remove rhis scrips tag, used by google stats, ie6 detector, etc...%>
+  <%#----------------------------------------------------------------------------%>
+  <%= render :partial => "shared/scripts"%>
 </body>
 </html>

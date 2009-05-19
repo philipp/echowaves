@@ -1,40 +1,45 @@
 <div id="header" class="container">
-	<div class="span-6">
+	<div class="span-5">
 		<h1><%= link_to image_tag("/images/echowaves.png", :height => 32), home_path %></h1>
 	</div>
 
-	<div class="span-18 last">
+	<div class="span-19 last">
 		<div id="menu">
 			<ul>
+				<li><%= link_to session[:sound]=="on" ? image_tag("/images/icons/sound-on.png") : image_tag("/images/icons/sound-off.png"), "?sound="+(session[:sound] == "on" ? "off" : "on") %></li>
 				<% if logged_in? %>
+				<li><%= link_to image_tag("/images/icons/star.png"), bookmarked_conversations_path %></li>
 				<li><%= link_to t("ui.logout"), logout_path %></li>
 				<li><%= link_to t("ui.edit_profile"), edit_user_path(current_user) %></li>
+				<li><%= link_to h(current_user.login), conversation_path(current_user.personal_conversation)	, 
+				:class => 'tip', 
+				:title => "personal convo for " + current_user.name %>
+				</li>
 				<li>
 					<%= link_to image_tag(current_user.gravatar_url, :border => 0, :alt => current_user.login, :width => 20, :height => 20),
 					user_path(current_user),
 					:class => 'tip', 
-					:title =>  t("users.since") + current_user.created_at.to_s(:pretty)  + 
-					'<br/>' + pluralize(current_user.conversations.size, 'convo') +
-					'<br/>' + pluralize(current_user.messages.size, 'message') +
-					'<br/>' + pluralize(current_user.subscriptions.size, 'subscription')%>
-				</li>				
-				<li><%= link_to h(current_user.login), conversation_messages_path(current_user.personal_conversation)	, 
-				:class => 'tip', 
-				:title => "personal convo for " + current_user.name %>
-				</li>				
+					:title => user_popup(current_user)
+					%>
+				</li>
 				<%else%>
-				<li><%= link_to t("ui.login"), new_session_path %></li>
+				<li><%= link_to t("ui.login"), new_user_session_path %></li>
 				<li><%= link_to t("ui.signup"), new_user_path %></li>
 				<%end%>
-				<li><%= link_to t("ui.search_messages"), msgsearch_path, :class => 'search_link' %></li>
+				<li>
+				  <form method="get" id="sform" action="/msgsearch" class="search_link">
+  					<input type="text" id="q" onfocus="if(document.getElementById('q').value == 'search messages') { document.getElementById('q').value = ''; }" value="search messages" name="q" size="15" style="color:#888;"/>
+					<%= image_submit_tag("/images/icons/magnifier.png")%>
+  				</form>
+				</li>
 				<li class="users"><%= link_to t('ui.users'), users_path %></li>
 				<li class="conversations"><%= link_to t('ui.conversations'), conversations_path %></li>
-
-				<li><%= link_to image_tag("/images/flags/es.gif"), "?locale=es-ES" %></li>
-				<li><%= link_to image_tag("/images/flags/us.gif"), "?locale=en" %></li>
-
-				<li><div id="connection_stat"><div id="connection_stat_data"></div></div></li>
 			</ul>
+			<div class="multilingual">
+			  <% form_tag '', :method => :get do %>
+          <%= select_tag("locale", options_for_select([["English","en"], ["Español","es-ES"], ["Русский", "ru"], ["Português Br.","pt-BR"], ["Nederlands","nl"]],I18n.locale), { :index => nil, :onchange => 'this.form.submit()'}) %>
+        <% end %>
+      </div>
 			<div class="clear"></div>
 		</div>
 	</div>
