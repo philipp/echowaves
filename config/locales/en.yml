@@ -108,6 +108,11 @@ en:
     sign_up_as_new_user: "sign up as new user"
     look_for_users: "look for users"
     since: "since:"
+    since_date: "since: {{date}}"
+    n_convos_started: "{{number}} convos started"   
+    n_messages_posted: "{{number}} messages posted"
+    following_n_users: "following {{number}} users"
+    n_followers: "{{number}} followers"
     logged_in_sucesfully: "Logged in successfully"
     logged_out: "You have been logged out."
     could_not_login_as: "Couldn't log you in as {{login}}"
@@ -142,40 +147,3 @@ en:
   errors:
     sorry_this_is_a_private_convo: "Sorry, this is a private conversation. You can try anoter one"
     only_the_owner_can_invite: "Only the owner of this conversation can invite other users"
-    
-  datetime:
-    distance_in_words:
-      half_a_minute: 'half a minute'
-      less_than_x_seconds:
-        zero: 'less than 1 second'
-        one: '1 second'
-        other: '{{count}} seconds'
-      x_seconds:
-        one: '1 second'
-        other: '{{count}} seconds'
-      less_than_x_minutes:
-        zero: 'less than a minute'
-        one: '1 minute'
-        other: '{{count}} minutes'
-      x_minutes:
-        one: "1 minute"
-        other: "{{count}} minutes"
-      about_x_hours:
-        one: 'about 1 hour'
-        other: '{{count}} hours'
-      x_days:
-        one: '1 day'
-        other: '{{count}} days'
-      about_x_months:
-        one: 'about 1 month'
-        other: '{{count}} months'
-      x_months:
-        one: '1 month'
-        other: '{{count}} months'
-      about_x_years:
-        one: 'about 1 year'
-        other: '{{count}} years'
-      over_x_years:
-        one: 'over 1 year'
-        other: '{{count}} years'
-  
