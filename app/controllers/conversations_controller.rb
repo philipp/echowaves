@@ -108,6 +108,7 @@ class ConversationsController < ApplicationController
       @conversation.parent_message_id = @message.id
       @conversation.description = %Q(
 #{ t( "conversations.user_spawned_convo_description", :login => current_user.login, :original_message_link => conversation_message_url(@message.conversation_id, @message) ) }
+      @conversation.topic = @conversation.description[0, 230] + "... Discuss!"
       )
     end
     respond_to do |format|
@@ -167,6 +168,12 @@ class ConversationsController < ApplicationController
         format.xml  { render :xml => @conversation.errors, :status => :unprocessable_entity }
       end
     end
+  end
+
+  def set_topic
+    @conversation.topic = params[:topic]
+    @conversation.save
+    redirect_to conversation_path( @conversation )
   end
 
   def follow

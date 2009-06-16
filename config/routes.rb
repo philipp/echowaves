@@ -14,6 +14,7 @@ ActionController::Routing::Routes.draw do |map|
     :private_status     => :put,
     :readwrite_status   => :put,
     :toogle_bookmark    => :post,
+    :set_topic          => :post,
     :follow             => :post,
     :follow_with_token  => :get,
     :unfollow           => :post,

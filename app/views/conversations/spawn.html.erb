@@ -20,6 +20,10 @@
       <%= f.text_area :description, :rows => 8, :cols => 60 %>
     </p>
     <p>
+      <%= f.label t("ui.topic") %><br />
+      <%= f.text_field :topic %>
+    </p>
+    <p>
       <%= f.submit t("ui.create") %>
     </p>
   <% end %>

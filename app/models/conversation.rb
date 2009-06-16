@@ -8,6 +8,7 @@
 #  user_id               :integer(4)
 #  delta                 :boolean(1)
 #  description           :text
+#  topic                 :string
 #  messages_count        :integer(4)      default(0)
 #  name                  :string(255)
 #  personal_conversation :boolean(1)
@@ -44,6 +45,8 @@ class Conversation < ActiveRecord::Base
   validates_length_of       :name,    :within => 3..100, :unless => :personal?
   validates_presence_of     :description
   validates_length_of       :description, :maximum => 10000
+  validates_presence_of     :topic
+  validates_length_of       :topic, :maximum => 255
   validates_format_of       :something, :with => /^$/ # anti spam, honeypot field must be blank
 
   named_scope :non_private, :conditions => { :private => false }
@@ -65,7 +68,8 @@ class Conversation < ActiveRecord::Base
   def self.add_personal(user)
     name = user.name || user.login
     desc = "This is a personal conversation for #{name}. If you wish to collaborate with #{name}, do it here."
-    convo = user.conversations.create(:name => user.login, :personal_conversation => true, :description => desc)
+    topic = "Talk to me!"
+    convo = user.conversations.create(:name => user.login, :personal_conversation => true, :description => desc, :topic => topic)
     convo.tag_list.add("personal_convo")
     convo.save
     convo
@@ -94,6 +98,10 @@ class Conversation < ActiveRecord::Base
 
   def escaped_description
     escaped(self.description)
+  end
+  
+  def escaped_topic
+    escaped(self.topic)
   end
   
   def followed_by?(user)

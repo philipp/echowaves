@@ -11,6 +11,7 @@
 	</span>
 	<h5><%= link_to h(personal_conversation.name), conversation_path(personal_conversation) %></h5>
 	<div class="description"><%= personal_conversation.escaped_description %></div>
+	<div class="topic">Topic: <%= conversation.escaped_topic %></div>
 	<span class="quiet small info">
 	  <%= personal_conversation.date_time12 %> -
 	  <%= pluralize personal_conversation.messages.size, 'message' %> -
