@@ -17,7 +17,6 @@ class ConversationsController < ApplicationController
     else
       @conversations = Conversation.non_private.not_personal.paginate :page => params[:page], :order => 'created_at DESC'
     end
-
     respond_to do |format|
       format.html
       format.atom
@@ -26,65 +25,17 @@ class ConversationsController < ApplicationController
   end
 
   def show
-    @messages = @conversation.messages.published.find(:all, :include => [:user], :limit => 50, :order => 'id DESC').reverse
-    
-    if logged_in?
-      subscription = current_user.subscriptions.find_by_conversation_id(@conversation.id)
-      @last_message_id = subscription.last_message_id if (subscription && subscription.new_messages_count > 0)
-    end
-
-    @has_more_messages = @conversation.has_messages_before?(@messages.first)
-
+    @has_more_messages = @conversation.messages.published.count > Message::PER_PAGE # the number of messages loaded in a convo
+    @last_message_id = @conversation.messages.published.first(:offset => Message::PER_PAGE-1, :order => 'id DESC').id if @has_more_messages
     respond_to do |format|
       format.html { render :layout => 'messages' }
       format.xml  { render :xml => {:conversation => @conversation, :messages => @messages} }
-      format.js   do
-        data = []
-        @messages.group_by(&:date).each do |date, grouped_messages|
-        	group = { :date => date }
-        	group.merge!({ :messages => grouped_messages.map { |message| message.data_for_templates } })
-        	data << group
-        end
-        # mark all the messages as read AFTER the ajax request for the messages list
-        current_user.conversation_visit_update(@conversation) if logged_in?
-        render :text => {:message_groups => data, :last_message_id => @last_message_id}.to_json
-      end
     end
   end
 
-  def files
-    @messages = @conversation.messages.with_file.published.find(:all, :include => [:user], :limit => 50, :order => 'id DESC').reverse
-    
-    if logged_in?
-      subscription = current_user.subscriptions.find_by_conversation_id(@conversation.id)
-      @last_message_id = subscription.last_message_id if (subscription && subscription.new_messages_count > 0)
-      current_user.conversation_visit_update(@conversation)
-    end
-
-    @has_more_messages = @conversation.has_messages_before?(@messages.first)
-
-    respond_to do |format|
-      format.html { render :layout => 'messages' }
-      format.xml  { render :xml => @conversation }
-    end
-  end
-  
-  def images
-    @messages = @conversation.messages.with_image.published.find(:all, :include => [:user], :limit => 50, :order => 'id DESC').reverse
-    
-    if logged_in?
-      subscription = current_user.subscriptions.find_by_conversation_id(@conversation.id)
-      @last_message_id = subscription.last_message_id if (subscription && subscription.new_messages_count > 0)
-      current_user.conversation_visit_update(@conversation)
-    end
-
-    @has_more_messages = @conversation.has_messages_before?(@messages.first)
-
-    respond_to do |format|
-      format.html { render :layout => 'messages' }
-      format.xml  { render :xml => @conversation }
-    end
-  end
+  alias_method :images, :show
+  alias_method :files, :show
+  alias_method :system_messages, :show
   
   def new
     @conversation = Conversation.new
@@ -184,6 +135,15 @@ class ConversationsController < ApplicationController
     current_user.follow(@conversation, params[:token])
     redirect_to @conversation
   end
+
+  def follow_email_with_token
+    # resolve invite
+    invite = Invite.find_by_conversation_id_and_token(params[:id], params[:token].to_s)        
+    invite.update_attribute( :user_id, current_user.id)
+    
+    current_user.follow(@conversation, params[:token].to_s)
+    redirect_to @conversation
+  end
   
   def follow_from_list
     follow
@@ -239,34 +199,52 @@ class ConversationsController < ApplicationController
     current_user.friends.each do |user| 
       @user = user if(user.id.to_s == params[:user_id]) # search for the user in friends collection
     end
-    # TODO this whole thing preferebly should move into the model
-    existing_invite = Invite.find(:first, :conditions => ["user_id = ? and requestor_id = ? and conversation_id = ?", @user.id, current_user.id, params[:id] ] )
-    return if(existing_invite != nil) # don't do anything, already invited
-    @invite = Invite.new
-    @invite.user_id = @user.id
-    @invite.requestor = current_user
-    @invite.conversation_id = params[:id]
-    @invite.token = @user.perishable_token if @conversation.private?
-    @invite.save
     
-    if @conversation.private?
-      # private convo only sends invite via email
-      @user.deliver_private_invite_instructions!(@invite)
-    else
-      @user.deliver_public_invite_instructions!(@invite)
-      # now let's create a system message and send it to the convo channel
-      # TODO: how to translate this for the current user?
-      msg = " invites you to follow a convo: <a href='/conversations/#{params[:id]}'>#{@invite.conversation.name}</a>"
-      notification = current_user.messages.create( :conversation => @user.personal_conversation, :message => msg)
-      notification.system_message = true
-      notification.save
-      notification.send_stomp_message
-    end
+    @user.invite @conversation, current_user
     
     render :update do |page| 
       page["user_" + @user.id.to_s].visual_effect :drop_out
     end 
   end
+
+  def invite_all_my_followers
+    current_user.followers.each do |user| 
+      if(user.id != current_user.id) 
+        user.invite @conversation, current_user        
+      end
+    end
+    render :update do |page| 
+      page["spinner_0"].visual_effect :drop_out
+    end 
+  end
+
+
+  def invite_via_email
+    emails_string = params[:emails]
+        
+    emails_string.to_s.split(/(,| |\r\n|\n|\r)/).each do |email|    
+      if(email =~ EMAIL_REGEX)
+        #here we've got a valid email address lets send the invite
+        # existing_invite = Invite.find(:first, :conditions => ["user_id = ? and requestor_id = ? and conversation_id = ?", self.id, invitee.id, conversation.id ] )
+        #         return if(existing_invite != nil) # don't do anything, already invited
+        invite = Invite.new
+        # invite.user_id = self.id
+        invite.requestor = current_user
+        invite.conversation_id = @conversation.id
+        invite.token = Authlogic::Random::friendly_token
+        invite.save
+
+        UserMailer.deliver_email_invite(email, invite)
+        
+      end
+    end
+    
+    render :update do |page| 
+      page["spinner_1"].visual_effect :drop_out
+      page["emails_"].clear
+    end 
+  end
+
 
   def toogle_bookmark
     if @conversation.tag_list_on(:bookmarks).include?(current_user.bookmark_tag)
@@ -276,6 +254,8 @@ class ConversationsController < ApplicationController
       current_user.tag(@conversation, :with => @conversation.bookmarks.collect{|tag| tag.name}.join(", ")  + ", " + current_user.bookmark_tag, :on => :bookmarks)
     end
   end
+
+
   
   def bookmarked
     @conversations = Conversation.tagged_with(current_user.bookmark_tag, :on => :bookmarks).paginate :page => params[:page], :order => 'created_at DESC'

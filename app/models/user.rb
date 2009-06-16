@@ -114,12 +114,12 @@ class User < ActiveRecord::Base
   
   def deliver_private_invite_instructions!(invite)
     reset_perishable_token!
-    UserMailer.deliver_private_invite_instructions(self, invite.conversation_id, invite.conversation.name, invite.token)
+    UserMailer.deliver_private_invite_instructions(self, invite.conversation_id, invite.conversation.name, invite.requestor, invite.token)
   end
 
   def deliver_public_invite_instructions!(invite)
     return unless self.receive_email_notifications
-    UserMailer.deliver_public_invite_instructions(self, invite.conversation_id, invite.conversation.name)
+    UserMailer.deliver_public_invite_instructions(self, invite.conversation_id, invite.conversation.name, invite.requestor)
   end
 
   
@@ -195,6 +195,31 @@ class User < ActiveRecord::Base
       end
     end
     tags
+  end
+
+  def invite(conversation, invitee) 
+    existing_invite = Invite.find(:first, :conditions => ["user_id = ? and requestor_id = ? and conversation_id = ?", self.id, invitee.id, conversation.id ] )
+    return if(existing_invite != nil) # don't do anything, already invited
+    invite = Invite.new
+    invite.user_id = self.id
+    invite.requestor = invitee
+    invite.conversation_id = conversation.id
+    invite.token = self.perishable_token if conversation.private?
+    invite.save
+ 
+    if conversation.private?
+      # private convo only sends invite via email
+      self.deliver_private_invite_instructions!(invite)
+    else
+      self.deliver_public_invite_instructions!(invite)
+      # now let's create a system message and send it to the convo channel
+      # TODO: how to translate this for the invitee user?
+      msg = " invites you to follow a convo: <a href='/conversations/#{conversation.id}'>#{invite.conversation.name}</a>"
+      notification = invitee.messages.create( :conversation => self.personal_conversation, :message => msg)
+      notification.system_message = true
+      notification.save
+      notification.send_stomp_message
+    end
   end
   
   def all_convos_tag_counts

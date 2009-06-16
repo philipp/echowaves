@@ -14,6 +14,7 @@ pt-BR:
     all: "todo"
     with_files: "com arquivos"
     with_images: "com imagens"
+    system_messages: "system messages"
     cancel: "cancelar"
     name: "nome"
     description: "descrição"
@@ -119,6 +120,9 @@ pt-BR:
     profile_updated: "Perfil atualizado corretamente"
     signup_complete: "Registro completo! Por favor entre no sistema para continuar."
     invite_users: "Convidar usuários"
+    invite_followed_users: "Invite followed users"
+    invite_all_followers: "Invite all my followers"
+    email_invites: "Email invites"
   conversations:
     go_to_conversation: "ir para a conversação"
     bookmarked_conversations: "conversações favoritas"
