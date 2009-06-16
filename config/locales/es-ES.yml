@@ -14,6 +14,7 @@ es-ES:
     all: "todo"
     with_files: "archivos"
     with_images: "imagenes"
+    system_messages: "system messages"
     cancel: "cancelar"
     name: "nombre"
     description: "descripcion"
@@ -119,6 +120,9 @@ es-ES:
     profile_updated: "Perfil actualizado correctamente"
     signup_complete: "Registro completado! Inicia sesión para continuar."
     invite_users: "Invitar usuarios"
+    invite_followed_users: "Invite followed users"
+    invite_all_followers: "Invite all my followers"
+    email_invites: "Email invites"
   conversations:
     go_to_conversation: "ir a conversacion"
     bookmarked_conversations: "conversaciones favoritas"

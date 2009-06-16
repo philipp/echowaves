@@ -6,7 +6,7 @@
 </div>
 
 <script>
-	new Ajax.Request('/conversations/<%= @conversation.id %>/messages/files.json',
+	new Ajax.Request('/conversations/<%= @conversation.id %>/messages/system_messages.json',
     {
       method:'get',
       onSuccess: function(transport){

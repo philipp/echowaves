@@ -4,9 +4,9 @@
 <html lang="en">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<meta name="Description" content="Opensource Group Chat Social Network written in Ruby On Rails, Conversation: <%= @conversation.name %>">
-	<title><%=@conversation.name-%> | EchoWaves (Group Chat Social Network)</title>
-  <link rel="shortcut icon" href="/images/favicon.ico" />
+	<meta name="Description" content="Opensource Social Group Chat written in Ruby On Rails, Conversation: <%= @conversation.name %>">
+	<title><%=@conversation.name-%> | EchoWaves (Social Group Chat)</title>
+  <link rel="shortcut icon" href="/favicon.ico" />
  	
   <link rel="stylesheet" href="/stylesheets/screen.css" type="text/css" media="screen, projection">
   <link rel="stylesheet" href="/stylesheets/print.css" type="text/css" media="print"> 
@@ -101,22 +101,7 @@
 
   <script>
   	document.observe('dom:loaded',function(){
-  	new Control.Tabs('convo_tabs');
-  	
-  	new Ajax.Request('/conversations/<%= @conversation.id %>',
-      {
-        method:'get',
-        onSuccess: function(transport){
-          var response = transport.responseText || "error, no responseText";
-          var json = response.evalJSON();
-          var html = new EJS({url: '/templates/chat.ejs'}).render(json);
-          $('messages').insert({"bottom":html});
-          $('load-indicator').hide();
-          Misc.pageScroll();
-        },
-        onFailure: function(){ alert('Something went wrong...') }
-      });
-      
+  	  new Control.Tabs('convo_tabs');
   	});
   </script>
 </head>
@@ -226,7 +211,8 @@
             	<h6><%= t("ui.messages") %>:</h6>
             	<%= link_to t("ui.all"), conversation_path(@conversation)%><br/>
               <%= link_to t("ui.with_files"), files_conversation_path(@conversation)%><br/>
-              <%= link_to t("ui.with_images"), images_conversation_path(@conversation)%>
+              <%= link_to t("ui.with_images"), images_conversation_path(@conversation)%><br/>
+              <%= link_to t("ui.system_messages"), system_messages_conversation_path(@conversation)%><br/>
             </div>
 		        
 		        <%= render :partial => 'conversations/recent_followers' %>
